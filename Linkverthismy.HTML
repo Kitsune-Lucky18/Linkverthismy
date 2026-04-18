@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Script Hub | Official Website</title>
+    
+    <!-- Firebase SDK (Compat Version untuk kemudahan integrasi) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <style>
+        /* CSS VARIABLES - Untuk memudahkan ganti warna dasar */
+        :root {
+            --primary-color: #ff4757;
+            --secondary-color: #00d2ff;
+            --overlay-dark: rgba(0, 0, 0, 0.85); /* Kegelapan background */
+            --card-bg: rgba(26, 29, 43, 0.9);
+            --text-main: #ffffff;
+            --text-dim: #a4b0be;
+            --success-color: #2ed573;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+            
+            /* PENGATURAN BACKGROUND GAMBAR */
+            /* Ganti 'background.jpg' dengan nama file gambar kamu */
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* User Bar */
+        .user-bar {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+        .btn-login {
+            color: var(--secondary-color);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .auth-providers {
+            display: none; /* Muncul saat klik login */
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        .btn-provider {
+            padding: 5px 12px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+        .btn-google { background: #db4437; }
+        .btn-github { background: #333; }
+
+        /* Overlay agar teks tetap terbaca meskipun background gambar terang */
+        .bg-overlay {
+            background-color: var(--overlay-dark);
+            min-height: 100vh;
+            width: 100%;
+            padding-bottom: 50px;
+        }
+
+        header {
+            background: linear-gradient(to bottom, rgba(255, 71, 87, 0.9), transparent);
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* YouTube Call to Action */
+        .yt-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--primary-color);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-top: -40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .btn-yt {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 35px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 15px;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-yt:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.6);
+        }
+
+        /* Scripts Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--secondary-color);
+            transform: translateY(-5px);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 3px solid var(--secondary-color);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-title {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+            font-size: 1.4rem;
+        }
+
+        .card-desc {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            height: 50px;
+        }
+
+        .btn-get {
+            display: block;
+            text-align: center;
+            background: transparent;
+            color: var(--secondary-color);
+            border: 2px solid var(--secondary-color);
+            padding: 10px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-get:hover {
+            background: var(--secondary-color);
+            color: #000;
+        }
+
+        /* Admin Form Style */
+        .admin-section {
+            margin-top: 50px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px dashed var(--secondary-color);
+        }
+        .admin-form input, .admin-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
+            color: white;
+        }
+        .btn-add {
+            background: var(--secondary-color);
+            color: black;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-source {
+            display: block;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        .btn-source:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-download {
+            display: block;
+            text-align: center;
+            background: var(--success-color);
+            color: white;
+            padding: 10px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: 0.3s;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Stats & Comments */
+        .card-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .comment-section {
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        /* Responsif untuk HP */
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8rem; }
+            .yt-card { padding: 20px; }
+        }
+
+        /* Search Bar Style */
+        .search-container {
+            margin-bottom: 30px;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        #searchInput:focus {
+            border-color: var(--secondary-color);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-overlay">
+        <div class="user-bar" id="userBar">
+            <div id="userInfo">
+                Kamu belum login. <span class="btn-login" onclick="toggleAuthOptions()">Login di sini</span>
+            </div>
+            <div class="auth-providers" id="authOptions">
+                <button class="btn-provider btn-google" onclick="login('google')">Google</button>
+                <button class="btn-provider btn-github" onclick="login('github')">GitHub</button>
+            </div>
+        </div>
+
+        <header>
+            <h1>🚀 MY ROBLOX SCRIPTS</h1>
+            <p>Gratis, Aman, dan Selalu Update</p>
+        </header>
+
+        <div class="container">
+            <!-- SEKSI YOUTUBE -->
+            <div class="yt-card">
+                <h2>Wajib Subscribe!</h2>
+                <p>Klik tombol di bawah dan subscribe untuk mendapatkan info script terbaru setiap hari.</p>
+                <!-- GANTI LINK YOUTUBE DI BAWAH INI -->
+                <a href="https://youtube.com/@Kitsune_Lucky18" target="_blank" rel="noopener noreferrer" class="btn-yt">Buka YouTube Saya</a>
+            </div>
+
+            <div class="search-container">
+                <h2 style="margin-bottom: 15px; border-left: 5px solid var(--secondary-color); padding-left: 15px;">Daftar Script</h2>
+                <input type="text" id="searchInput" placeholder="Cari script (contoh: Blox Fruits, Pet Sim)...">
+            </div>
+
+            <!-- GRID INI AKAN TERISI OTOMATIS OLEH JAVASCRIPT -->
+            <div class="grid" id="scriptGrid"></div>
+
+            <!-- ADMIN PANEL UNTUK KAMU INPUT SCRIPT -->
+            <div class="admin-section">
+                <h3 style="margin-bottom:15px; color:var(--secondary-color)">➕ Tambah Script Baru (Hanya Terlihat Olehmu)</h3>
+                <div class="admin-form">
+                    <input type="text" id="addTitle" placeholder="Judul Script (Contoh: Blox Fruits Hub)">
+                    <input type="text" id="addDesc" placeholder="Deskripsi Singkat">
+                    <input type="text" id="addImg" placeholder="Link Gambar (URL)">
+                    <input type="text" id="addLink" placeholder="Link Linkvertise">
+                    <input type="text" id="addSource" placeholder="Link Rscripts.net">
+                    <input type="text" id="addRaw" placeholder="Link Raw Script (untuk Download .txt)">
+                    <button class="btn-add" onclick="addNewScript()">Tambahkan ke Daftar</button>
+                </div>
+            </div>
+
+            <footer>
+                <p>&copy; 2024 Roblox Script Hub By Kitsune Lucky18. All Rights Reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // KONFIGURASI FIREBASE (GANTI DENGAN MILIKMU)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSy...",
+            authDomain: "project-id.firebaseapp.com",
+            projectId: "project-id",
+            storageBucket: "project-id.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // ==========================================
+        // DATA SCRIPT KAMU (ISI DI SINI)
+        // ==========================================
+        let scriptsData = [
+            // Contoh cara isi:
+            // {
+            //     title: "Blox Fruits Hub",
+            //     desc: "Auto Farm & Raid",
+            //     img: "https://link-gambar.com/foto.jpg",
+            //     link: "https://linkvertise.com/...",
+            //     source: "https://rscripts.net/...",
+            //     raw: "https://raw.githubusercontent.com/..."
+            // },
+        ];
+
+        // Fungsi untuk menampilkan script ke layar
+        function renderScripts(filter = "") {
+            const grid = document.getElementById('scriptGrid');
+            grid.innerHTML = ""; // Kosongkan dulu
+
+            const filteredData = scriptsData.filter(s => 
+                s.title.toLowerCase().includes(filter.toLowerCase()) || 
+                s.desc.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            if (filteredData.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--text-dim); background: rgba(255,255,255,0.05); border-radius: 15px;">
+                        <p>🚫 Belum ada script yang ditemukan.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredData.forEach((script, index) => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <img src="${script.img || 'https://via.placeholder.com/400x200?text=No+Image'}" class="card-img">
+                        <div class="card-body">
+                            <h3 class="card-title">${script.title}</h3>
+                            <p class="card-desc">${script.desc}</p>
+                            <div class="card-stats">
+                                <span>👁️ 0 views</span>
+                                <span>📥 0 ditransfer</span>
+                            </div>
+                            <a href="${script.link}" target="_blank" rel="noopener noreferrer" class="btn-get">GET SCRIPT (ADS)</a>
+                            <button class="btn-download" onclick="downloadScript('${script.title}', 'loadstring(game:HttpGet(\\'${script.raw}\\'))()')">DOWNLOAD .TXT</button>
+                            <a href="${script.source}" target="_blank" rel="noopener noreferrer" class="btn-source">View on Rscripts.net</a>
+                            <button class="btn-login" style="margin-top:10px; display:block; width:100%; text-align:center; background:none; border:none; color:var(--text-dim)" onclick="toggleComments(this)">Lihat Komentar</button>
+                        </div>
+                        <div class="comment-section">
+                            <div class="comment-list"></div>
+                            <div class="comment-input-container" style="margin-top:10px;">
+                                <input type="text" class="comment-input" placeholder="Tulis komentar..." style="width:70%; padding:5px; border-radius:4px; border:none;">
+                                <button onclick="postComment(this)" style="width:25%; padding:5px; cursor:pointer;">Kirim</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Fungsi Tambah Script Baru lewat Form
+        function addNewScript() {
+            const newScript = {
+                title: document.getElementById('addTitle').value,
+                desc: document.getElementById('addDesc').value,
+                img: document.getElementById('addImg').value,
+                link: document.getElementById('addLink').value,
+                source: document.getElementById('addSource').value,
+                raw: document.getElementById('addRaw').value
+            };
+
+            if(!newScript.title) return alert("Minimal isi judul!");
+            
+            scriptsData.push(newScript);
+            renderScripts();
+            
+            // Reset Form
+            document.querySelectorAll('.admin-form input').forEach(i => i.value = "");
+            alert("Berhasil ditambah! Ingat, ini hanya sementara. Untuk permanen, copy data di console (F12) ke dalam kode scriptsData di VSCode.");
+            console.log("Salin ini ke scriptsData di kode kamu:", JSON.stringify(scriptsData, null, 2));
+        }
+
+        // --- LOGIKA LOGIN FIREBASE ---
+        function toggleAuthOptions() {
+            const opts = document.getElementById('authOptions');
+            opts.style.display = opts.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function login(providerName) {
+            let provider;
+            if (providerName === 'google') {
+                provider = new firebase.auth.GoogleAuthProvider();
+            } else {
+                provider = new firebase.auth.GithubAuthProvider();
+            }
+
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    document.getElementById('authOptions').style.display = 'none';
+                })
+                .catch((error) => {
+                    alert("Gagal login: " + error.message);
+                });
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        // Pantau Status Login
+        auth.onAuthStateChanged((user) => {
+            const info = document.getElementById('userInfo');
+            if (user) {
+                // Ambil foto profil kecil jika ada
+                const photo = user.photoURL ? `<img src="${user.photoURL}" style="width:20px; border-radius:50%; vertical-align:middle; margin-right:5px;">` : "";
+                info.innerHTML = `${photo} Halo, <b>${user.displayName || user.email}</b> | <span class="btn-login" onclick="logout()">Logout</span>`;
+            } else {
+                info.innerHTML = `Kamu belum login. <span class="btn-login" onclick="toggleAuthOptions()">Login di sini</span> untuk komentar.`;
+            }
+        });
+
+        // --- LOGIKA DOWNLOAD ---
+        function downloadScript(filename, content) {
+            const element = document.createElement('a');
+            const file = new Blob([content], {type: 'text/plain'});
+            element.href = URL.createObjectURL(file);
+            element.download = filename + ".txt";
+            document.body.appendChild(element);
+            element.click();
+            
+            // Simulasi Counter Download
+            alert("Script sedang di-download!");
+        }
+
+        // --- LOGIKA KOMENTAR ---
+        function toggleComments(btn) {
+            const section = btn.parentElement.nextElementSibling;
+            section.style.display = section.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function postComment(btn) {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Kamu harus login dulu untuk berkomentar!");
+                return;
+            }
+            
+            const userName = user.displayName || "User";
+            const input = btn.previousElementSibling;
+            if (input.value.trim() === "") return;
+
+            const list = btn.parentElement.previousElementSibling;
+            const newComment = document.createElement('div');
+            newComment.style.marginBottom = "5px";
+            newComment.style.fontSize = "0.85rem";
+            newComment.innerHTML = `<b style="color:var(--secondary-color)">${userName}:</b> ${input.value}`;
+            
+            list.appendChild(newComment);
+            input.value = "";
+        }
+
+        renderScripts(); // Panggil pertama kali
+
+        // Logika Fitur Pencarian
+        document.getElementById('searchInput').addEventListener('input', function() {
+            renderScripts(this.value);
+        });
+    </script>
+</body>
+</html>
